@@ -4,6 +4,8 @@ from queue import Empty
 import multiprocessing
 import os
 import re
+import time
+
 from datetime import datetime
 from config_reader import ConfigReader
 from mqtt_subscriber import MqttSubscriber
@@ -19,13 +21,38 @@ class DataProcessor:
         self.queue = queue
         self.db_manager = DatabaseManager()
         self.bufr_manager = BufrFileManager()
+        self.BATCH_SIZE = 50
+
+    def process_batch(self, bufr_copy):
+        for message in bufr_copy:
+            self.process_message(message)
 
     def process_messages(self):
         # Continuously process messages from the queue
+        # process_batch is called every 5 seconds or when the batch size is reached
+
+        buffer = []  # Initialize an empty buffer
+        last_batch_time = time.time()  # Record the time when the last batch was processed
+
         while True:
             try:
                 payload = self.queue.get(timeout=1)
-                self.process_message(payload)
+                buffer.append(payload) # Add the payload to the buffer
+                # Check if BATCH_SIZE is reached
+                if len(buffer) >= self.BATCH_SIZE:
+                    # Process the batch if BATCH_SIZE is reached
+                    multiprocessing.Process(target=self.process_buffer, args=(buffer.copy(),)).start()
+                    buffer = []  # Clear the original buffer
+                    last_batch_time = time.time()  # Update last_batch_time
+                    continue
+                # Check if 5 seconds have elapsed since the last batch processing
+                current_time = time.time()
+                if current_time - last_batch_time >= 5:
+                    # Process the current buffer and reset last_batch_time
+                    multiprocessing.Process(target=self.process_batch, args=(buffer.copy(),)).start()
+                    buffer = []  # Clear the original buffer
+                    last_batch_time = current_time  # Update last_batch_time
+                
             except Empty:
                 pass
 
