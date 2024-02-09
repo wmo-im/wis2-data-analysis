@@ -83,7 +83,7 @@ class MqttSubscriber:
 
 def main():
     # Configure logging level
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.CRITICAL)
     
     # Read general configuration
     general_config = ConfigReader.read_config(os.path.join(CONFIG_DIR, GENERAL_CONFIG_FILE), 'General')
