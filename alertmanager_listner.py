@@ -55,7 +55,7 @@ def create_jira_ticket(summary, description, issue_type="Bug"):
     jira_payload = {
         "fields": {
             "project": {
-                "key": "WI"  # Replace with your Jira project key
+                "key": "WI"  #Jira project key
             },
             "summary": summary,
             "description": description,
